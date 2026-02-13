@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <title>RoomCraft Canvas</title>
 
-  <!-- Load local Konva -->
+  <!-- Local Konva -->
   <script src="konva.min.js"></script>
 
   <style>
@@ -14,10 +14,12 @@
       background: #f2f2f2;
       font-family: Arial, sans-serif;
     }
+
     #container {
       width: 100vw;
       height: 100vh;
     }
+
     #info {
       position: fixed;
       top: 10px;
@@ -33,56 +35,64 @@
 
 <body>
 
-<div id="info">Tap to create walls. Double tap to reset.</div>
+<div id="info">Tap to create walls • Double tap to reset</div>
 <div id="container"></div>
 
 <script>
 window.addEventListener('load', function () {
 
-  const width = window.innerWidth;
-  const height = window.innerHeight;
-
   const stage = new Konva.Stage({
     container: 'container',
-    width: width,
-    height: height,
+    width: window.innerWidth,
+    height: window.innerHeight,
   });
 
   const layer = new Konva.Layer();
   stage.add(layer);
 
   let points = [];
-  let currentLine = null;
 
-  function drawLine() {
-    if (currentLine) currentLine.destroy();
-
-    currentLine = new Konva.Line({
-      points: points,
-      stroke: 'black',
-      strokeWidth: 3,
-      lineCap: 'round',
-      lineJoin: 'round',
-    });
-
-    layer.add(currentLine);
-    layer.draw();
+  function distance(x1, y1, x2, y2) {
+    return Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2).toFixed(0);
   }
 
   stage.on('mousedown touchstart', function () {
     const pos = stage.getPointerPosition();
     points.push(pos.x, pos.y);
-    drawLine();
+
+    if (points.length >= 4) {
+      const x1 = points[points.length - 4];
+      const y1 = points[points.length - 3];
+      const x2 = points[points.length - 2];
+      const y2 = points[points.length - 1];
+
+      const line = new Konva.Line({
+        points: [x1, y1, x2, y2],
+        stroke: 'black',
+        strokeWidth: 3,
+      });
+
+      const midX = (x1 + x2) / 2;
+      const midY = (y1 + y2) / 2;
+
+      const text = new Konva.Text({
+        x: midX,
+        y: midY,
+        text: distance(x1, y1, x2, y2) + " px",
+        fontSize: 14,
+        fill: 'red',
+      });
+
+      layer.add(line);
+      layer.add(text);
+      layer.draw();
+    }
   });
 
   stage.on('dblclick dbltap', function () {
+    layer.destroyChildren();
+    layer.draw();
     points = [];
-    currentLine = null;
-  });
-
-  window.addEventListener('resize', function () {
-    stage.width(window.innerWidth);
-    stage.height(window.innerHeight);
   });
 
 });
