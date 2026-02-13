@@ -885,3 +885,960 @@
         function addText(pos) {
             const text =
               
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RoomCraft CAD</title>
+    <!-- Konva.js for 2D drafting -->
+    <script src="https://unpkg.com/konva@9/konva.min.js"></script>
+    <!-- Three.js for 3D modeling -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- OrbitControls for Three.js -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <!-- TransformControls for Three.js gizmos -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/TransformControls.js"></script>
+    <style>
+        /* Dark CAD-style UI */
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #2c2c2c;
+            color: #ffffff;
+            overflow: hidden;
+        }
+        .top-menu {
+            background-color: #1e1e1e;
+            padding: 5px;
+            display: flex;
+            justify-content: space-around;
+        }
+        .top-menu button {
+            background-color: #3c3c3c;
+            color: #ffffff;
+            border: none;
+            padding: 8px 12px;
+            cursor: pointer;
+        }
+        .top-menu button:hover {
+            background-color: #555;
+        }
+        .main-container {
+            display: flex;
+            height: calc(100vh - 60px);
+        }
+        .left-toolbar {
+            width: 60px;
+            background-color: #1e1e1e;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 10px 0;
+        }
+        .left-toolbar button {
+            background-color: #3c3c3c;
+            color: #ffffff;
+            border: none;
+            width: 40px;
+            height: 40px;
+            margin: 5px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .left-toolbar button:hover {
+            background-color: #555;
+        }
+        .main-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .canvas-container {
+            flex: 1;
+            display: flex;
+        }
+        .canvas-2d {
+            flex: 1;
+            background-color: #ffffff;
+        }
+        .canvas-3d {
+            flex: 1;
+            background-color: #000000;
+            display: none; /* Toggleable */
+        }
+        .right-panel {
+            width: 250px;
+            background-color: #1e1e1e;
+            padding: 10px;
+            overflow-y: auto;
+        }
+        .bottom-status {
+            background-color: #1e1e1e;
+            padding: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .status-item {
+            margin: 0 10px;
+        }
+        /* Mobile-friendly adjustments */
+        @media (max-width: 768px) {
+            .left-toolbar {
+                width: 50px;
+            }
+            .right-panel {
+                width: 200px;
+            }
+        }
+        /* Layers panel */
+        .layers-panel {
+            margin-top: 20px;
+        }
+        .layer-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px;
+            background-color: #3c3c3c;
+            margin-bottom: 5px;
+        }
+        .layer-item button {
+            background: none;
+            border: none;
+            color: #fff;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Menu -->
+    <div class="top-menu">
+        <button id="file-menu">File</button>
+        <button id="edit-menu">Edit</button>
+        <button id="view-menu">View</button>
+        <button id="draw-menu">Draw</button>
+        <button id="modify-menu">Modify</button>
+        <button id="3d-menu">3D</button>
+        <button id="layers-menu">Layers</button>
+    </div>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- Left Toolbar -->
+        <div class="left-toolbar">
+            <button id="tool-select" title="Select">S</button>
+            <button id="tool-line" title="Line">L</button>
+            <button id="tool-polyline" title="Polyline">P</button>
+            <button id="tool-rectangle" title="Rectangle">R</button>
+            <button id="tool-circle" title="Circle">C</button>
+            <button id="tool-arc" title="Arc">A</button>
+            <button id="tool-wall" title="Wall">W</button>
+            <button id="tool-trim" title="Trim">T</button>
+            <button id="tool-extend" title="Extend">X</button>
+            <button id="tool-offset" title="Offset">O</button>
+            <button id="tool-fillet" title="Fillet">F</button>
+            <button id="tool-chamfer" title="Chamfer">H</button>
+            <button id="tool-text" title="Text">Txt</button>
+            <button id="tool-dimension" title="Dimension">Dim</button>
+            <button id="tool-extrude" title="Extrude">E</button>
+            <button id="tool-box" title="Box">B</button>
+            <button id="tool-cylinder" title="Cylinder">Cy</button>
+            <button id="tool-sphere" title="Sphere">Sp</button>
+            <button id="tool-union" title="Union">U</button>
+            <button id="tool-subtract" title="Subtract">Sub</button>
+            <button id="tool-measure" title="Measure">M</button>
+        </div>
+
+        <!-- Main Area -->
+        <div class="main-area">
+            <!-- Canvas Container -->
+            <div class="canvas-container">
+                <div id="canvas-2d" class="canvas-2d"></div>
+                <div id="canvas-3d" class="canvas-3d"></div>
+            </div>
+
+            <!-- Bottom Status Bar -->
+            <div class="bottom-status">
+                <div class="status-item">Coordinates: (0, 0)</div>
+                <div class="status-item">Snap: On</div>
+                <div class="status-item">Tool: Select</div>
+            </div>
+        </div>
+
+        <!-- Right Properties Panel -->
+        <div class="right-panel">
+            <h3>Properties</h3>
+            <div id="properties-content">
+                <!-- Dynamic content will be added here -->
+            </div>
+            <div class="layers-panel">
+                <h3>Layers</h3>
+                <div id="layers-list">
+                    <!-- Layer items will be added here -->
+                </div>
+                <button id="add-layer">Add Layer</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let stage, layer, currentTool = 'select', snapEnabled = true, layers = [{name: 'Default', visible: true, locked: false, objects: []}], selectedObjects = [], drawingPoints = [], tempShape = null, isDrawing = false;
+        let scene, camera, renderer, controls, transformControls, current3DTool = 'orbit', meshes = [], selectedMesh = null;
+        let is3DMode = false, gridHelper, snapPoints = [], projectData = {layers: layers, meshes: meshes};
+
+        // Initialize 2D Canvas (Konva)
+        function init2D() {
+            stage = new Konva.Stage({
+                container: 'canvas-2d',
+                width: window.innerWidth - 310,
+                height: window.innerHeight - 100
+            });
+            layer = new Konva.Layer();
+            stage.add(layer);
+
+            // Grid
+            drawGrid();
+
+            // Event listeners
+            stage.on('contentDbltap', handleDoubleTap);
+            stage.on('mousemove', updateCoordinates);
+            stage.on('click', handleCanvasClick);
+            updateLayersPanel();
+        }
+
+        // Draw grid with snap points
+        function drawGrid() {
+            const gridSize = 20;
+            snapPoints = [];
+            for (let i = 0; i < stage.width(); i += gridSize) {
+                const line = new Konva.Line({
+                    points: [i, 0, i, stage.height()],
+                    stroke: '#ddd',
+                    strokeWidth: 0.5
+                });
+                layer.add(line);
+                for (let j = 0; j < stage.height(); j += gridSize) {
+                    snapPoints.push({x: i, y: j});
+                }
+            }
+            for (let i = 0; i < stage.height(); i += gridSize) {
+                const line = new Konva.Line({
+                    points: [0, i, stage.width(), i],
+                    stroke: '#ddd',
+                    strokeWidth: 0.5
+                });
+                layer.add(line);
+            }
+            layer.draw();
+        }
+
+        // Snap to nearest point
+        function snapToGrid(pos) {
+            if (!snapEnabled) return pos;
+            let nearest = snapPoints[0];
+            let minDist = Math.sqrt((pos.x - nearest.x)**2 + (pos.y - nearest.y)**2);
+            for (let point of snapPoints) {
+                const dist = Math.sqrt((pos.x - point.x)**2 + (pos.y - point.y)**2);
+                if (dist < minDist) {
+                    minDist = dist;
+                    nearest = point;
+                }
+            }
+            return nearest;
+        }
+
+        // Initialize 3D Viewport (Three.js)
+        function init3D() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, (window.innerWidth - 310) / (window.innerHeight - 100), 0.1, 1000);
+            renderer = new THREE.WebGLRenderer();
+            renderer.setSize(window.innerWidth - 310, window.innerHeight - 100);
+            document.getElementById('canvas-3d').appendChild(renderer.domElement);
+
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            camera.position.z = 5;
+
+            transformControls = new THREE.TransformControls(camera, renderer.domElement);
+            scene.add(transformControls);
+
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0x404040);
+            scene.add(ambientLight);
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
+            scene.add(directionalLight);
+
+            // Grid helper
+            gridHelper = new THREE.GridHelper(10, 10);
+            scene.add(gridHelper);
+
+            animate3D();
+        }
+
+        function animate3D() {
+            requestAnimationFrame(animate3D);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // Tool handlers
+        document.getElementById('tool-select').addEventListener('click', () => setTool('select'));
+        document.getElementById('tool-line').addEventListener('click', () => setTool('line'));
+        document.getElementById('tool-polyline').addEventListener('click', () => setTool('polyline'));
+        document.getElementById('tool-rectangle').addEventListener('click', () => setTool('rectangle'));
+        document.getElementById('tool-circle').addEventListener('click', () => setTool('circle'));
+        document.getElementById('tool-arc').addEventListener('click', () => setTool('arc'));
+        document.getElementById('tool-wall').addEventListener('click', () => setTool('wall'));
+        document.getElementById('tool-trim').addEventListener('click', () => setTool('trim'));
+        document.getElementById('tool-extend').addEventListener('click', () => setTool('extend'));
+        document.getElementById('tool-offset').addEventListener('click', () => setTool('offset'));
+        document.getElementById('tool-fillet').addEventListener('click', () => setTool('fillet'));
+        document.getElementById('tool-chamfer').addEventListener('click', () => setTool('chamfer'));
+        document.getElementById('tool-text').addEventListener('click', () => setTool('text'));
+        document.getElementById('tool-dimension').addEventListener('click', () => setTool('dimension'));
+        document.getElementById('tool-extrude').addEventListener('click', () => setTool('extrude'));
+        document.getElementById('tool-box').addEventListener('click', () => setTool('box'));
+        document.getElementById('tool-cylinder').addEventListener('click', () => setTool('cylinder'));
+        document.getElementById('tool-sphere').addEventListener('click', () => setTool('sphere'));
+        document.getElementById('tool-union').addEventListener('click', () => setTool('union'));
+        document.getElementById('tool-subtract').addEventListener('click', () => setTool('subtract'));
+        document.getElementById('tool-measure').addEventListener('click', () => setTool('measure'));
+
+        function setTool(tool) {
+            currentTool = tool;
+            document.querySelector('.bottom-status .status-item:nth-child(3)').textContent = `Tool: ${tool}`;
+            drawingPoints = [];
+            isDrawing = false;
+            if (tempShape) {
+                tempShape.destroy();
+                tempShape = null;
+            }
+            layer.draw();
+        }
+
+        // Handle canvas click for drawing
+        function handleCanvasClick(e) {
+            const pos = snapToGrid(stage.getPointerPosition());
+            if (currentTool === 'select') {
+                selectObject(pos);
+            } else if (currentTool === 'line') {
+                drawLine(pos);
+            } else if (currentTool === 'polyline') {
+                drawPolyline(pos);
+            } else if (currentTool === 'rectangle') {
+                drawRectangle(pos);
+            } else if (currentTool === 'circle') {
+                drawCircle(pos);
+            } else if (currentTool === 'arc') {
+                drawArc(pos);
+            } else if (currentTool === 'wall') {
+                drawWall(pos);
+            } else if (currentTool === 'text') {
+                addText(pos);
+            } else if (currentTool === 'dimension') {
+                addDimension(pos);
+            } else if (currentTool === 'measure') {
+                measureDistance(pos);
+            } else if (currentTool === 'trim') {
+                trimObject(pos);
+            } else if (currentTool === 'extend') {
+                extendObject(pos);
+            } else if (currentTool === 'offset') {
+                offsetObject(pos);
+            } else if (currentTool === 'fillet') {
+                filletObject(pos);
+            } else if (currentTool === 'chamfer') {
+                chamferObject(pos);
+            }
+        }
+
+        // Drawing functions
+        function drawLine(pos) {
+            drawingPoints.push(pos.x, pos.y);
+            if (drawingPoints.length === 4) {
+                const line = new Konva.Line({
+                    points: drawingPoints,
+                    stroke: 'black',
+                    strokeWidth: 2
+                });
+                layer.add(line);
+                layers[0].objects.push(line);
+                drawingPoints = [];
+                layer.draw();
+            }
+        }
+
+        function drawPolyline(pos) {
+            drawingPoints.push(pos.x, pos.y);
+            if (tempShape) tempShape.destroy();
+            if (drawingPoints.length >= 4) {
+                tempShape = new Konva.Line({
+                    points: drawingPoints,
+                    stroke: 'blue',
+                    strokeWidth: 2,
+                    dash: [5, 5]
+                });
+                layer.add(tempShape);
+            }
+            layer.draw();
+        }
+
+        function drawRectangle(pos) {
+            drawingPoints.push(pos.x, pos.y);
+            if (drawingPoints.length === 4) {
+                const rect = new Konva.Rect({
+                    x: Math.min(drawingPoints[0], drawingPoints[2]),
+                    y: Math.min(drawingPoints[1], drawingPoints[3]),
+                    width: Math.abs(drawingPoints[2] - drawingPoints[0]),
+                    height: Math.abs(drawingPoints[3] - drawingPoints[1]),
+                    stroke: 'black',
+                    strokeWidth: 2
+                });
+                layer.add(rect);
+                layers[0].objects.push(rect);
+                drawingPoints = [];
+                layer.draw();
+            }
+        }
+
+        function drawCircle(pos) {
+            drawingPoints.push(pos.x, pos.y);
+            if (drawingPoints.length === 4) {
+                const radius = Math.sqrt((drawingPoints[2] - drawingPoints[0])**2 + (drawingPoints[3] - drawingPoints[1])**2);
+                const circle = new Konva.Circle({
+                    x: drawingPoints[0],
+                    y: drawingPoints[1],
+                    radius: radius,
+                    stroke: 'black',
+                    strokeWidth: 2
+                });
+                layer.add(circle);
+                layers[0].objects.push(circle);
+                drawingPoints = [];
+                layer.draw();
+            }
+        }
+
+        function drawArc(pos) {
+            // Simplified arc drawing
+            drawingPoints.push(pos.x, pos.y);
+            if (drawingPoints.length === 6) {
+                const arc = new Konva.Arc({
+                    x: drawingPoints[0],
+                    y: drawingPoints[1],
+                    innerRadius: 0,
+                    outerRadius: Math.sqrt((drawingPoints[4] - drawingPoints[0])**2 + (drawingPoints[5] - drawingPoints[1])**2),
+                    angle: 90,
+                    stroke: 'black',
+                    strokeWidth: 2
+                });
+                layer.add(arc);
+                layers[0].objects.push(arc);
+                drawingPoints = [];
+                layer.draw();
+            }
+        }
+
+        function drawWall(pos) {
+            drawLine(pos);
+            // Add length label
+            if (drawingPoints.length === 0 && layers[0].objects.length > 0) {
+                const lastLine = layers[0].objects[layers[0].objects.length - 1];
+                const points = lastLine.points();
+                const length = Math.sqrt((points[2] - points[0])**2 + (points[3] - points[1])**2);
+                const text = new Konva.Text({
+                    x: (points[0] + points[2]) / 2,
+                    y: (points[1] + points[3]) / 2,
+                    text: length.toFixed(2),
+                    fontSize: 12,
+                    fill: 'red'
+                });
+                layer.add(text);
+                layer.draw();
+            }
+        }
+
+        function addText(pos) {
+            const textValue
+
+        <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RoomCraft CAD</title>
+    <!-- Konva.js for 2D drafting -->
+    <script src="https://unpkg.com/konva@9/konva.min.js"></script>
+    <!-- Three.js for 3D modeling -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- OrbitControls for Three.js -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <!-- TransformControls for Three.js gizmos -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/TransformControls.js"></script>
+    <style>
+        /* Dark CAD-style UI */
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #2c2c2c;
+            color: #ffffff;
+            overflow: hidden;
+        }
+        .top-menu {
+            background-color: #1e1e1e;
+            padding: 5px;
+            display: flex;
+            justify-content: space-around;
+        }
+        .top-menu button {
+            background-color: #3c3c3c;
+            color: #ffffff;
+            border: none;
+            padding: 8px 12px;
+            cursor: pointer;
+        }
+        .top-menu button:hover {
+            background-color: #555;
+        }
+        .main-container {
+            display: flex;
+            height: calc(100vh - 60px);
+        }
+        .left-toolbar {
+            width: 60px;
+            background-color: #1e1e1e;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 10px 0;
+        }
+        .left-toolbar button {
+            background-color: #3c3c3c;
+            color: #ffffff;
+            border: none;
+            width: 40px;
+            height: 40px;
+            margin: 5px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .left-toolbar button:hover {
+            background-color: #555;
+        }
+        .main-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .canvas-container {
+            flex: 1;
+            display: flex;
+        }
+        .canvas-2d {
+            flex: 1;
+            background-color: #ffffff;
+        }
+        .canvas-3d {
+            flex: 1;
+            background-color: #000000;
+            display: none; /* Toggleable */
+        }
+        .right-panel {
+            width: 250px;
+            background-color: #1e1e1e;
+            padding: 10px;
+            overflow-y: auto;
+        }
+        .bottom-status {
+            background-color: #1e1e1e;
+            padding: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .status-item {
+            margin: 0 10px;
+        }
+        /* Mobile-friendly adjustments */
+        @media (max-width: 768px) {
+            .left-toolbar {
+                width: 50px;
+            }
+            .right-panel {
+                width: 200px;
+            }
+        }
+        /* Layers panel */
+        .layers-panel {
+            margin-top: 20px;
+        }
+        .layer-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px;
+            background-color: #3c3c3c;
+            margin-bottom: 5px;
+        }
+        .layer-item button {
+            background: none;
+            border: none;
+            color: #fff;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Menu -->
+    <div class="top-menu">
+        <button id="file-menu">File</button>
+        <button id="edit-menu">Edit</button>
+        <button id="view-menu">View</button>
+        <button id="draw-menu">Draw</button>
+        <button id="modify-menu">Modify</button>
+        <button id="3d-menu">3D</button>
+        <button id="layers-menu">Layers</button>
+    </div>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- Left Toolbar -->
+        <div class="left-toolbar">
+            <button id="tool-select" title="Select">S</button>
+            <button id="tool-line" title="Line">L</button>
+            <button id="tool-polyline" title="Polyline">P</button>
+            <button id="tool-rectangle" title="Rectangle">R</button>
+            <button id="tool-circle" title="Circle">C</button>
+            <button id="tool-arc" title="Arc">A</button>
+            <button id="tool-wall" title="Wall">W</button>
+            <button id="tool-trim" title="Trim">T</button>
+            <button id="tool-extend" title="Extend">X</button>
+            <button id="tool-offset" title="Offset">O</button>
+            <button id="tool-fillet" title="Fillet">F</button>
+            <button id="tool-chamfer" title="Chamfer">H</button>
+            <button id="tool-text" title="Text">Txt</button>
+            <button id="tool-dimension" title="Dimension">Dim</button>
+            <button id="tool-extrude" title="Extrude">E</button>
+            <button id="tool-box" title="Box">B</button>
+            <button id="tool-cylinder" title="Cylinder">Cy</button>
+            <button id="tool-sphere" title="Sphere">Sp</button>
+            <button id="tool-union" title="Union">U</button>
+            <button id="tool-subtract" title="Subtract">Sub</button>
+            <button id="tool-measure" title="Measure">M</button>
+        </div>
+
+        <!-- Main Area -->
+        <div class="main-area">
+            <!-- Canvas Container -->
+            <div class="canvas-container">
+                <div id="canvas-2d" class="canvas-2d"></div>
+                <div id="canvas-3d" class="canvas-3d"></div>
+            </div>
+
+            <!-- Bottom Status Bar -->
+            <div class="bottom-status">
+                <div class="status-item">Coordinates: (0, 0)</div>
+                <div class="status-item">Snap: On</div>
+                <div class="status-item">Tool: Select</div>
+            </div>
+        </div>
+
+        <!-- Right Properties Panel -->
+        <div class="right-panel">
+            <h3>Properties</h3>
+            <div id="properties-content">
+                <!-- Dynamic content will be added here -->
+            </div>
+            <div class="layers-panel">
+                <h3>Layers</h3>
+                <div id="layers-list">
+                    <!-- Layer items will be added here -->
+                </div>
+                <button id="add-layer">Add Layer</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let stage, layer, currentTool = 'select', snapEnabled = true, layers = [{name: 'Default', visible: true, locked: false, objects: []}], selectedObjects = [], drawingPoints = [], tempShape = null, isDrawing = false;
+        let scene, camera, renderer, controls, transformControls, current3DTool = 'orbit', meshes = [], selectedMesh = null;
+        let is3DMode = false, gridHelper, snapPoints = [], projectData = {layers: layers, meshes: meshes};
+
+        // Initialize 2D Canvas (Konva)
+        function init2D() {
+            stage = new Konva.Stage({
+                container: 'canvas-2d',
+                width: window.innerWidth - 310,
+                height: window.innerHeight - 100
+            });
+            layer = new Konva.Layer();
+            stage.add(layer);
+
+            // Grid
+            drawGrid();
+
+            // Event listeners
+            stage.on('contentDbltap', handleDoubleTap);
+            stage.on('mousemove', updateCoordinates);
+            stage.on('click', handleCanvasClick);
+            updateLayersPanel();
+        }
+
+        // Draw grid with snap points
+        function drawGrid() {
+            const gridSize = 20;
+            snapPoints = [];
+            for (let i = 0; i < stage.width(); i += gridSize) {
+                const line = new Konva.Line({
+                    points: [i, 0, i, stage.height()],
+                    stroke: '#ddd',
+                    strokeWidth: 0.5
+                });
+                layer.add(line);
+                for (let j = 0; j < stage.height(); j += gridSize) {
+                    snapPoints.push({x: i, y: j});
+                }
+            }
+            for (let i = 0; i < stage.height(); i += gridSize) {
+                const line = new Konva.Line({
+                    points: [0, i, stage.width(), i],
+                    stroke: '#ddd',
+                    strokeWidth: 0.5
+                });
+                layer.add(line);
+            }
+            layer.draw();
+        }
+
+        // Snap to nearest point
+        function snapToGrid(pos) {
+            if (!snapEnabled) return pos;
+            let nearest = snapPoints[0];
+            let minDist = Math.sqrt((pos.x - nearest.x)**2 + (pos.y - nearest.y)**2);
+            for (let point of snapPoints) {
+                const dist = Math.sqrt((pos.x - point.x)**2 + (pos.y - point.y)**2);
+                if (dist < minDist) {
+                    minDist = dist;
+                    nearest = point;
+                }
+            }
+            return nearest;
+        }
+
+        // Initialize 3D Viewport (Three.js)
+        function init3D() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, (window.innerWidth - 310) / (window.innerHeight - 100), 0.1, 1000);
+            renderer = new THREE.WebGLRenderer();
+            renderer.setSize(window.innerWidth - 310, window.innerHeight - 100);
+            document.getElementById('canvas-3d').appendChild(renderer.domElement);
+
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            camera.position.z = 5;
+
+            transformControls = new THREE.TransformControls(camera, renderer.domElement);
+            scene.add(transformControls);
+
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0x404040);
+            scene.add(ambientLight);
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
+            scene.add(directionalLight);
+
+            // Grid helper
+            gridHelper = new THREE.GridHelper(10, 10);
+            scene.add(gridHelper);
+
+            animate3D();
+        }
+
+        function animate3D() {
+            requestAnimationFrame(animate3D);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // Tool handlers
+        document.getElementById('tool-select').addEventListener('click', () => setTool('select'));
+        document.getElementById('tool-line').addEventListener('click', () => setTool('line'));
+        document.getElementById('tool-polyline').addEventListener('click', () => setTool('polyline'));
+        document.getElementById('tool-rectangle').addEventListener('click', () => setTool('rectangle'));
+        document.getElementById('tool-circle').addEventListener('click', () => setTool('circle'));
+        document.getElementById('tool-arc').addEventListener('click', () => setTool('arc'));
+        document.getElementById('tool-wall').addEventListener('click', () => setTool('wall'));
+        document.getElementById('tool-trim').addEventListener('click', () => setTool('trim'));
+        document.getElementById('tool-extend').addEventListener('click', () => setTool('extend'));
+        document.getElementById('tool-offset').addEventListener('click', () => setTool('offset'));
+        document.getElementById('tool-fillet').addEventListener('click', () => setTool('fillet'));
+        document.getElementById('tool-chamfer').addEventListener('click', () => setTool('chamfer'));
+        document.getElementById('tool-text').addEventListener('click', () => setTool('text'));
+        document.getElementById('tool-dimension').addEventListener('click', () => setTool('dimension'));
+        document.getElementById('tool-extrude').addEventListener('click', () => setTool('extrude'));
+        document.getElementById('tool-box').addEventListener('click', () => setTool('box'));
+        document.getElementById('tool-cylinder').addEventListener('click', () => setTool('cylinder'));
+        document.getElementById('tool-sphere').addEventListener('click', () => setTool('sphere'));
+        document.getElementById('tool-union').addEventListener('click', () => setTool('union'));
+        document.getElementById('tool-subtract').addEventListener('click', () => setTool('subtract'));
+        document.getElementById('tool-measure').addEventListener('click', () => setTool('measure'));
+
+        function setTool(tool) {
+            currentTool = tool;
+            document.querySelector('.bottom-status .status-item:nth-child(3)').textContent = `Tool: ${tool}`;
+            drawingPoints = [];
+            isDrawing = false;
+            if (tempShape) {
+                tempShape.destroy();
+                tempShape = null;
+            }
+            layer.draw();
+        }
+
+        // Handle canvas click for drawing
+        function handleCanvasClick(e) {
+            const pos = snapToGrid(stage.getPointerPosition());
+            if (currentTool === 'select') {
+                selectObject(pos);
+            } else if (currentTool === 'line') {
+                drawLine(pos);
+            } else if (currentTool === 'polyline') {
+                drawPolyline(pos);
+            } else if (currentTool === 'rectangle') {
+                drawRectangle(pos);
+            } else if (currentTool === 'circle') {
+                drawCircle(pos);
+            } else if (currentTool === 'arc') {
+                drawArc(pos);
+            } else if (currentTool === 'wall') {
+                drawWall(pos);
+            } else if (currentTool === 'text') {
+                addText(pos);
+            } else if (currentTool === 'dimension') {
+                addDimension(pos);
+            } else if (currentTool === 'measure') {
+                measureDistance(pos);
+            } else if (currentTool === 'trim') {
+                trimObject(pos);
+            } else if (currentTool === 'extend') {
+                extendObject(pos);
+            } else if (currentTool === 'offset') {
+                offsetObject(pos);
+            } else if (currentTool === 'fillet') {
+                filletObject(pos);
+            } else if (currentTool === 'chamfer') {
+                chamferObject(pos);
+            }
+        }
+
+        // Drawing functions
+        function drawLine(pos) {
+            drawingPoints.push(pos.x, pos.y);
+            if (drawingPoints.length === 4) {
+                const line = new Konva.Line({
+                    points: drawingPoints,
+                    stroke: 'black',
+                    strokeWidth: 2
+                });
+                layer.add(line);
+                layers[0].objects.push(line);
+                drawingPoints = [];
+                layer.draw();
+            }
+        }
+
+        function drawPolyline(pos) {
+            drawingPoints.push(pos.x, pos.y);
+            if (tempShape) tempShape.destroy();
+            if (drawingPoints.length >= 4) {
+                tempShape = new Konva.Line({
+                    points: drawingPoints,
+                    stroke: 'blue',
+                    strokeWidth: 2,
+                    dash: [5, 5]
+                });
+                layer.add(tempShape);
+            }
+            layer.draw();
+        }
+
+        function drawRectangle(pos) {
+            drawingPoints.push(pos.x, pos.y);
+            if (drawingPoints.length === 4) {
+                const rect = new Konva.Rect({
+                    x: Math.min(drawingPoints[0], drawingPoints[2]),
+                    y: Math.min(drawingPoints[1], drawingPoints[3]),
+                    width: Math.abs(drawingPoints[2] - drawingPoints[0]),
+                    height: Math.abs(drawingPoints[3] - drawingPoints[1]),
+                    stroke: 'black',
+                    strokeWidth: 2
+                });
+                layer.add(rect);
+                layers[0].objects.push(rect);
+                drawingPoints = [];
+                layer.draw();
+            }
+        }
+
+        function drawCircle(pos) {
+            drawingPoints.push(pos.x, pos.y);
+            if (drawingPoints.length === 4) {
+                const radius = Math.sqrt((drawingPoints[2] - drawingPoints[0])**2 + (drawingPoints[3] - drawingPoints[1])**2);
+                const circle = new Konva.Circle({
+                    x: drawingPoints[0],
+                    y: drawingPoints[1],
+                    radius: radius,
+                    stroke: 'black',
+                    strokeWidth: 2
+                });
+                layer.add(circle);
+                layers[0].objects.push(circle);
+                drawingPoints = [];
+                layer.draw();
+            }
+        }
+
+        function drawArc(pos) {
+            // Simplified arc drawing
+            drawingPoints.push(pos.x, pos.y);
+            if (drawingPoints.length === 6) {
+                const arc = new Konva.Arc({
+                    x: drawingPoints[0],
+                    y: drawingPoints[1],
+                    innerRadius: 0,
+                    outerRadius: Math.sqrt((drawingPoints[4] - drawingPoints[0])**2 + (drawingPoints[5] - drawingPoints[1])**2),
+                    angle: 90,
+                    stroke: 'black',
+                    strokeWidth: 2
+                });
+                layer.add(arc);
+                layers[0].objects.push(arc);
+                drawingPoints = [];
+                layer.draw();
+            }
+        }
+
+        function drawWall(pos) {
+            drawLine(pos);
+            // Add length label
+            if (drawingPoints.length === 0 && layers[0].objects.length > 0) {
+                const lastLine = layers[0].objects[layers[0].objects.length - 1];
+                const points = lastLine.points();
+                const length = Math.sqrt((points[2] - points[0])**2 + (points[3] - points[1])**2);
+                const text = new Konva.Text({
+                    x: (points[0] + points[2]) / 2,
+                    y: (points[1] + points[3]) / 2,
+                    text: length.toFixed(2),
+                    fontSize: 12,
+                    fill: 'red'
+                });
+                layer.add(text);
+                layer.draw();
+            }
+        }
+
+        function addText(pos) {
+            const textValue
