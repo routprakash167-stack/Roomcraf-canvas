@@ -1,61 +1,42 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8" />
-  <title>RoomCraft Canvas</title>
-  <script src="https://unpkg.com/konva@9/konva.min.js"></script>
-  <style>
-    body { margin:0; overflow:hidden; background:#f2f2f2; }
-    #container { width:100vw; height:100vh; }
-    #info {
-      position:fixed; top:10px; left:10px;
-      background:white; padding:8px 12px;
-      font-family:Arial; border-radius:8px;
-      box-shadow:0 2px 6px rgba(0,0,0,0.2);
-    }
-  </style>
-</head>
-<body>
-<div id="info">Tap to create walls. Double tap to finish.</div>
-<div id="container"></div>
-
 <script>
-const width = window.innerWidth;
-const height = window.innerHeight;
+window.addEventListener('DOMContentLoaded', function () {
 
-const stage = new Konva.Stage({
-  container: 'container',
-  width: width,
-  height: height,
-});
+  const width = window.innerWidth;
+  const height = window.innerHeight;
 
-const layer = new Konva.Layer();
-stage.add(layer);
-
-let points = [];
-let line;
-
-stage.on('click tap', function (e) {
-  const pos = stage.getPointerPosition();
-  points.push(pos.x, pos.y);
-
-  if (line) line.destroy();
-
-  line = new Konva.Line({
-    points: points,
-    stroke: 'black',
-    strokeWidth: 3,
-    lineCap: 'round',
-    lineJoin: 'round',
+  const stage = new Konva.Stage({
+    container: 'container',
+    width: width,
+    height: height,
   });
 
-  layer.add(line);
-  layer.draw();
-});
+  const layer = new Konva.Layer();
+  stage.add(layer);
 
-stage.on('dblclick dbltap', function () {
-  points = [];
+  let points = [];
+  let line;
+
+  stage.on('click tap', function () {
+    const pos = stage.getPointerPosition();
+    points.push(pos.x, pos.y);
+
+    if (line) line.destroy();
+
+    line = new Konva.Line({
+      points: points,
+      stroke: 'black',
+      strokeWidth: 3,
+      lineCap: 'round',
+      lineJoin: 'round',
+    });
+
+    layer.add(line);
+    layer.draw();
+  });
+
+  stage.on('dblclick dbltap', function () {
+    points = [];
+  });
+
 });
 </script>
-</body>
-</html>
