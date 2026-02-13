@@ -1,11 +1,12 @@
 <script>
-window.addEventListener('DOMContentLoaded', function () {
+window.addEventListener('load', function () {
 
+  const container = document.getElementById('container');
   const width = window.innerWidth;
   const height = window.innerHeight;
 
   const stage = new Konva.Stage({
-    container: 'container',
+    container: container,
     width: width,
     height: height,
   });
@@ -14,15 +15,12 @@ window.addEventListener('DOMContentLoaded', function () {
   stage.add(layer);
 
   let points = [];
-  let line;
+  let currentLine = null;
 
-  stage.on('click tap', function () {
-    const pos = stage.getPointerPosition();
-    points.push(pos.x, pos.y);
+  function drawLine() {
+    if (currentLine) currentLine.destroy();
 
-    if (line) line.destroy();
-
-    line = new Konva.Line({
+    currentLine = new Konva.Line({
       points: points,
       stroke: 'black',
       strokeWidth: 3,
@@ -30,12 +28,24 @@ window.addEventListener('DOMContentLoaded', function () {
       lineJoin: 'round',
     });
 
-    layer.add(line);
+    layer.add(currentLine);
     layer.draw();
+  }
+
+  stage.on('mousedown touchstart', function () {
+    const pos = stage.getPointerPosition();
+    points.push(pos.x, pos.y);
+    drawLine();
   });
 
   stage.on('dblclick dbltap', function () {
     points = [];
+    currentLine = null;
+  });
+
+  window.addEventListener('resize', function () {
+    stage.width(window.innerWidth);
+    stage.height(window.innerHeight);
   });
 
 });
