@@ -49,3 +49,162 @@
     </script>
 </body>
 </html>
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RoomCraft CAD</title>
+    <!-- Konva.js for 2D drafting (to be used later) -->
+    <script src="https://unpkg.com/konva@9/konva.min.js"></script>
+    <!-- Three.js for 3D modeling (to be used later) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        /* Dark CAD-style UI */
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #2c2c2c;
+            color: #ffffff;
+            overflow: hidden;
+        }
+        .top-menu {
+            background-color: #1e1e1e;
+            padding: 5px;
+            display: flex;
+            justify-content: space-around;
+        }
+        .top-menu button {
+            background-color: #3c3c3c;
+            color: #ffffff;
+            border: none;
+            padding: 8px 12px;
+            cursor: pointer;
+        }
+        .top-menu button:hover {
+            background-color: #555;
+        }
+        .main-container {
+            display: flex;
+            height: calc(100vh - 60px);
+        }
+        .left-toolbar {
+            width: 60px;
+            background-color: #1e1e1e;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 10px 0;
+        }
+        .left-toolbar button {
+            background-color: #3c3c3c;
+            color: #ffffff;
+            border: none;
+            width: 40px;
+            height: 40px;
+            margin: 5px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .left-toolbar button:hover {
+            background-color: #555;
+        }
+        .main-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .canvas-container {
+            flex: 1;
+            display: flex;
+        }
+        .canvas-2d {
+            flex: 1;
+            background-color: #ffffff;
+        }
+        .canvas-3d {
+            flex: 1;
+            background-color: #000000;
+        }
+        .right-panel {
+            width: 250px;
+            background-color: #1e1e1e;
+            padding: 10px;
+            overflow-y: auto;
+        }
+        .bottom-status {
+            background-color: #1e1e1e;
+            padding: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .status-item {
+            margin: 0 10px;
+        }
+        /* Mobile-friendly adjustments */
+        @media (max-width: 768px) {
+            .left-toolbar {
+                width: 50px;
+            }
+            .right-panel {
+                width: 200px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Menu -->
+    <div class="top-menu">
+        <button id="file-menu">File</button>
+        <button id="edit-menu">Edit</button>
+        <button id="view-menu">View</button>
+        <button id="draw-menu">Draw</button>
+        <button id="modify-menu">Modify</button>
+        <button id="3d-menu">3D</button>
+        <button id="layers-menu">Layers</button>
+    </div>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- Left Toolbar -->
+        <div class="left-toolbar">
+            <!-- Empty buttons for now -->
+            <button></button>
+            <button></button>
+            <button></button>
+            <button></button>
+            <button></button>
+        </div>
+
+        <!-- Main Area -->
+        <div class="main-area">
+            <!-- Canvas Container -->
+            <div class="canvas-container">
+                <div id="canvas-2d" class="canvas-2d"></div>
+                <div id="canvas-3d" class="canvas-3d"></div>
+            </div>
+
+            <!-- Bottom Status Bar -->
+            <div class="bottom-status">
+                <div class="status-item">Coordinates: (0, 0)</div>
+                <div class="status-item">Tool: None</div>
+            </div>
+        </div>
+
+        <!-- Right Properties Panel -->
+        <div class="right-panel">
+            <h3>Properties</h3>
+            <!-- Empty for now -->
+        </div>
+    </div>
+
+    <script>
+        // No logic yet - just layout
+    </script>
+</body>
+</html>
+```
