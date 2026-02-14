@@ -377,3 +377,253 @@
 </body>
 </html>
 ```
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CAD Design Tool</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        .top-bar {
+            background-color: #003366; /* Dark blue */
+            color: white;
+            padding: 10px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .top-bar div {
+            margin: 5px;
+            cursor: pointer;
+            padding: 5px 10px;
+            border-radius: 3px;
+            background-color: #0055aa;
+        }
+        .top-bar div:hover {
+            background-color: #0077cc;
+        }
+        canvas {
+            border: 1px solid #ccc;
+            display: block;
+            margin: 20px auto;
+            background-color: white;
+        }
+        .input-panel {
+            text-align: center;
+            margin: 10px;
+        }
+        input {
+            margin: 0 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="top-bar">
+        <div>Infinite Coordinate System</div>
+        <div>Zoom + Pan Camera</div>
+        <div>Line Tool</div>
+        <div>Rectangle Tool</div>
+        <div>Relative Input (@14',9')</div>
+        <div>Angle Input (@14'<45)</div>
+        <div>Snapping (Endpoint, Midpoint, Grid)</div>
+        <div>Dimension Tool</div>
+        <div>Layers</div>
+        <div>Save/Export</div>
+    </div>
+    
+    <div class="input-panel">
+        <label>Relative Input: <input type="text" id="relativeInput" placeholder="@14',9'"></label>
+        <label>Angle Input: <input type="text" id="angleInput" placeholder="@14'<45"></label>
+        <button id="applyInput">Apply</button>
+    </div>
+    
+    <canvas id="cadCanvas" width="800" height="600"></canvas>
+    
+    <script>
+        const canvas = document.getElementById('cadCanvas');
+        const ctx = canvas.getContext('2d');
+        let isDrawing = false;
+        let tool = 'line'; // Default tool
+        let startX, startY;
+        let zoom = 1;
+        let panX = 0, panY = 0;
+        let gridSize = 20;
+        let snapping = true;
+        let layers = [{ name: 'Layer 1', visible: true, objects: [] }];
+        let currentLayer = 0;
+
+        // Infinite coordinate system (grid) - draws lines starting from panned position
+        function drawGrid() {
+            ctx.save();
+            ctx.translate(panX, panY);
+            ctx.scale(zoom, zoom);
+            ctx.strokeStyle = '#ddd';
+            ctx.lineWidth = 1 / zoom;
+            
+            // Calculate the starting points for infinite grid
+            const startX = Math.floor(-panX / zoom / gridSize) * gridSize;
+            const startY = Math.floor(-panY / zoom / gridSize) * gridSize;
+            const endX = startX + (canvas.width / zoom) + gridSize;
+            const endY = startY + (canvas.height / zoom) + gridSize;
+            
+            // Vertical lines
+            for (let x = startX; x <= endX; x += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(x, startY);
+                ctx.lineTo(x, endY);
+                ctx.stroke();
+            }
+            // Horizontal lines
+            for (let y = startY; y <= endY; y += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(startX, y);
+                ctx.lineTo(endX, y);
+                ctx.stroke();
+            }
+            ctx.restore();
+        }
+
+        // Snap to grid, endpoint, midpoint
+        function snap(x, y) {
+            if (!snapping) return { x, y };
+            // Simple grid snap
+            return { x: Math.round(x / gridSize) * gridSize, y: Math.round(y / gridSize) * gridSize };
+        }
+
+        // Mouse events for drawing
+        canvas.addEventListener('mousedown', (e) => {
+            if (e.button === 0) { // Left click for drawing
+                isDrawing = true;
+                const rect = canvas.getBoundingClientRect();
+                startX = (e.clientX - rect.left - panX) / zoom;
+                startY = (e.clientY - rect.top - panY) / zoom;
+                const snapped = snap(startX, startY);
+                startX = snapped.x;
+                startY = snapped.y;
+            }
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (!isDrawing) return;
+            const rect = canvas.getBoundingClientRect();
+            let endX = (e.clientX - rect.left - panX) / zoom;
+            let endY = (e.clientY - rect.top - panY) / zoom;
+            const snapped = snap(endX, endY);
+            endX = snapped.x;
+            endY = snapped.y;
+            redraw();
+            ctx.save();
+            ctx.translate(panX, panY);
+            ctx.scale(zoom, zoom);
+            if (tool === 'line') {
+                ctx.beginPath();
+                ctx.moveTo(startX, startY);
+                ctx.lineTo(endX, endY);
+                ctx.stroke();
+            } else if (tool === 'rectangle') {
+                ctx.strokeRect(startX, startY, endX - startX, endY - startY);
+            }
+            ctx.restore();
+        });
+
+        canvas.addEventListener('mouseup', (e) => {
+            if (!isDrawing) return;
+            isDrawing = false;
+            const rect = canvas.getBoundingClientRect();
+            let endX = (e.clientX - rect.left - panX) / zoom;
+            let endY = (e.clientY - rect.top - panY) / zoom;
+            const snapped = snap(endX, endY);
+            endX = snapped.x;
+            endY = snapped.y;
+            // Save to layer
+            layers[currentLayer].objects.push({ tool, startX, startY, endX, endY });
+            redraw();
+        });
+
+        // Zoom and pan
+        canvas.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
+            zoom *= zoomFactor;
+            redraw();
+        });
+
+        let isPanning = false;
+        let lastPanX, lastPanY;
+        canvas.addEventListener('mousedown', (e) => {
+            if (e.button === 1 || e.button === 2) { // Middle or right mouse for pan
+                e.preventDefault();
+                isPanning = true;
+                lastPanX = e.clientX;
+                lastPanY = e.clientY;
+            }
+        });
+        canvas.addEventListener('mousemove', (e) => {
+            if (isPanning) {
+                panX += e.clientX - lastPanX;
+                panY += e.clientY - lastPanY;
+                lastPanX = e.clientX;
+                lastPanY = e.clientY;
+                redraw();
+            }
+        });
+        canvas.addEventListener('mouseup', () => {
+            isPanning = false;
+        });
+        canvas.addEventListener('contextmenu', (e) => e.preventDefault()); // Disable right-click menu
+
+        // Redraw canvas
+        function redraw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawGrid();
+            layers.forEach(layer => {
+                if (layer.visible) {
+                    layer.objects.forEach(obj => {
+                        ctx.save();
+                        ctx.translate(panX, panY);
+                        ctx.scale(zoom, zoom);
+                        if (obj.tool === 'line') {
+                            ctx.beginPath();
+                            ctx.moveTo(obj.startX, obj.startY);
+                            ctx.lineTo(obj.endX, obj.endY);
+                            ctx.stroke();
+                        } else if (obj.tool === 'rectangle') {
+                            ctx.strokeRect(obj.startX, obj.startY, obj.endX - obj.startX, obj.endY - obj.startY);
+                        }
+                        ctx.restore();
+                    });
+                }
+            });
+        }
+
+        // Tool selection
+        document.querySelector('.top-bar div:nth-child(3)').addEventListener('click', () => tool = 'line');
+        document.querySelector('.top-bar div:nth-child(4)').addEventListener('click', () => tool = 'rectangle');
+
+        // Apply inputs (simplified)
+        document.getElementById('applyInput').addEventListener('click', () => {
+            // Parse and apply relative/angle inputs (placeholder)
+            console.log('Applied:', document.getElementById('relativeInput').value, document.getElementById('angleInput').value);
+        });
+
+        // Save/Export (basic)
+        document.querySelector('.top-bar div:nth-child(10)').addEventListener('click', () => {
+            const link = document.createElement('a');
+            link.download = 'design.png';
+            link.href = canvas.toDataURL();
+            link.click();
+        });
+
+        // Initial draw
+        redraw();
+    </script>
+</body>
+</html>
