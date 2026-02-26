@@ -1,56 +1,70 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Prakash CAD</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
+<!-- PROFESSIONAL RIBBON -->
+<div class="ribbon-container">
 
-    <!-- RIBBON -->
-    <div class="ribbon">
-        <div class="ribbon-section">
-            <button>New</button>
-            <button>Open</button>
-            <button>Save</button>
-        </div>
-
-        <div class="ribbon-section">
-            <button>Line</button>
-            <button>Circle</button>
-            <button>Trim</button>
-            <button>Move</button>
-        </div>
-
-        <div class="ribbon-section">
-            <button>Undo</button>
-            <button>Redo</button>
-        </div>
+    <!-- TAB HEADER -->
+    <div class="ribbon-tabs">
+        <div class="tab active" data-tab="home">Home</div>
+        <div class="tab" data-tab="insert">Insert</div>
+        <div class="tab" data-tab="modify">Modify</div>
+        <div class="tab" data-tab="view">View</div>
     </div>
 
-    <!-- MAIN AREA -->
-    <div class="main-container">
+    <!-- TAB CONTENT -->
+    <div class="ribbon-content">
 
-        <!-- LEFT TOOL PANEL -->
-        <div class="sidebar">
-            <h3>Tools</h3>
-            <button>Line</button>
-            <button>Circle</button>
-            <button>Trim</button>
+        <!-- HOME TAB -->
+        <div class="ribbon-panel active" id="home">
+
+            <div class="ribbon-group">
+                <div class="group-title">Draw</div>
+                <button class="ribbon-btn">Line</button>
+                <button class="ribbon-btn">Circle</button>
+                <button class="ribbon-btn">Rectangle</button>
+            </div>
+
+            <div class="ribbon-group">
+                <div class="group-title">Modify</div>
+                <button class="ribbon-btn">Trim</button>
+                <button class="ribbon-btn">Move</button>
+                <button class="ribbon-btn">Rotate</button>
+            </div>
+
+            <div class="ribbon-group">
+                <div class="group-title">Clipboard</div>
+                <button class="ribbon-btn">Undo</button>
+                <button class="ribbon-btn">Redo</button>
+            </div>
+
         </div>
 
-        <!-- DESKTOP / CANVAS AREA -->
-        <div class="desktop">
-            <canvas id="cadCanvas"></canvas>
+        <!-- INSERT TAB -->
+        <div class="ribbon-panel" id="insert">
+            <div class="ribbon-group">
+                <div class="group-title">Insert</div>
+                <button class="ribbon-btn">Image</button>
+                <button class="ribbon-btn">Block</button>
+            </div>
+        </div>
+
+        <!-- MODIFY TAB -->
+        <div class="ribbon-panel" id="modify">
+            <div class="ribbon-group">
+                <div class="group-title">Advanced Modify</div>
+                <button class="ribbon-btn">Offset</button>
+                <button class="ribbon-btn">Mirror</button>
+                <button class="ribbon-btn">Scale</button>
+            </div>
+        </div>
+
+        <!-- VIEW TAB -->
+        <div class="ribbon-panel" id="view">
+            <div class="ribbon-group">
+                <div class="group-title">View Controls</div>
+                <button class="ribbon-btn">Zoom In</button>
+                <button class="ribbon-btn">Zoom Out</button>
+                <button class="ribbon-btn">Reset View</button>
+            </div>
         </div>
 
     </div>
-
-    <!-- STATUS BAR -->
-    <div class="status-bar">
-        <span id="coords">X: 0 Y: 0</span>
-        <span id="zoomLevel">Zoom: 100%</span>
-    </div>
-
-    <script type="module" src="main.js"></script>
-</body>
-</html>
+</div>
