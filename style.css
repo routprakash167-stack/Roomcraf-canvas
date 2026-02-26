@@ -1,68 +1,74 @@
-/* ===== RIBBON CONTAINER ===== */
-.ribbon-container {
+/* ===== GLOBAL ===== */
+body {
+    margin: 0;
+    font-family: Segoe UI, sans-serif;
+}
+
+/* ===== LANDING PAGE ===== */
+.landing-body {
+    background: linear-gradient(135deg, #1f2937, #111827);
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+}
+
+.landing-container {
+    text-align: center;
+}
+
+.landing-container h1 {
+    font-size: 48px;
+    margin-bottom: 10px;
+}
+
+.landing-container button {
+    padding: 12px 30px;
+    font-size: 18px;
+    background: #2563eb;
+    border: none;
+    color: white;
+    cursor: pointer;
+    border-radius: 6px;
+}
+
+.landing-container button:hover {
+    background: #1e40af;
+}
+
+/* ===== DESIGN PAGE LAYOUT ===== */
+.design-body {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+/* ===== RIBBON ===== */
+.ribbon {
     background: #2c2f33;
     color: white;
     display: flex;
-    flex-direction: column;
-}
-
-/* ===== TABS ===== */
-.ribbon-tabs {
-    display: flex;
-    border-bottom: 1px solid #444;
-}
-
-.tab {
     padding: 10px 20px;
-    cursor: pointer;
+    height: 70px;
+    align-items: center;
 }
 
-.tab.active {
-    background: #3a3f44;
-    font-weight: bold;
-}
-
-/* ===== CONTENT AREA ===== */
-.ribbon-content {
-    display: flex;
-    padding: 10px;
-    height: 110px;
-}
-
-.ribbon-panel {
-    display: none;
-    width: 100%;
-}
-
-.ribbon-panel.active {
-    display: flex;
-}
-
-/* ===== GROUPS ===== */
-.ribbon-group {
-    margin-right: 30px;
-    border-right: 1px solid #444;
-    padding-right: 20px;
-}
-
-.group-title {
-    font-size: 12px;
-    margin-bottom: 5px;
-    color: #aaa;
-}
-
-/* ===== BUTTONS ===== */
-.ribbon-btn {
-    display: block;
-    margin-bottom: 6px;
-    padding: 6px 12px;
+.ribbon button {
+    margin-right: 10px;
+    padding: 8px 14px;
     background: #3a3f44;
     border: none;
     color: white;
     cursor: pointer;
-    min-width: 90px;
 }
 
-.ribbon-btn:hover {
+.ribbon button:hover {
     background: #4e545c;
+}
+
+/* ===== WORKSPACE ===== */
+.workspace {
+    flex: 1;
+    background: #f3f4f6;
 }
