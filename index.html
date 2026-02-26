@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>PR Design Workspace</title>
+
+<style>
+body{
+  margin:0;
+  font-family:Arial;
+  background:#1e1e1e;
+  color:white;
+  overflow:hidden;
+}
+
+/* ================= RIBBON ================= */
+.ribbon{
+  display:flex;
+  background:#2d2d2d;
+  padding:8px;
+  gap:40px;
+  border-bottom:2px solid #444;
+}
+
+.section{
+  display:flex;
+  gap:10px;
+  align-items:center;
+}
+
+.section h3{
+  margin:0;
+  font-size:14px;
+  color:#aaa;
+}
+
+button{
+  background:#3a3a3a;
+  border:none;
+  color:white;
+  padding:6px 10px;
+  cursor:pointer;
+  border-radius:4px;
+}
+
+button:hover{
+  background:#555;
+}
+
+input[type=color]{
+  height:30px;
+}
+
+/* ================= CANVAS ================= */
+canvas{
+  display:block;
+  background:#111;
+}
+
+/* ================= AXIS ================= */
+.axis{
+  position:absolute;
+  bottom:10px;
+  left:10px;
+  color:#0f0;
+  font-size:12px;
+}
+</style>
+</head>
+
+<body>
+
+<!-- ================= RIBBON ================= -->
+<div class="ribbon">
+
+  <div class="section">
+    <h3>DRAW</h3>
+    <button onclick="setTool('line')">📏 Line</button>
+    <button onclick="setTool('rect')">▭ Rect</button>
+    <button onclick="setTool('circle')">◯ Circle</button>
+    <button onclick="setTool('wall')">🧱 Wall</button>
+  </div>
+
+  <div class="section">
+    <h3>ANNOTATE</h3>
+    <button onclick="setTool('text')">🔤 Text</button>
+  </div>
+
+  <div class="section">
+    <h3>MODIFY</h3>
+    <button onclick="setTool('trim')">✂ Trim</button>
+    <button onclick="setTool('window')">🪟 Window</button>
+    <button onclick="setTool('gate')">🚪 Gate</button>
+  </div>
+
+  <div class="section">
+    <button onclick="newFile()">🆕 New</button>
+    <button onclick="saveFile()">💾 Save</button>
+    <input type="color" id="colorPicker" value="#00ffff">
+  </div>
+
+</div>
+
+<canvas id="canvas"></canvas>
+
+<div class="axis" id="axisIndicator">X:0 Y:0</div>
+
+<script>
+
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight - 50;
+
+let tool = "line";
+let shapes = [];
+let startX, startY;
+let drawing = false;
+let scale = 1;
+let offsetX = 0;
+let offsetY = 0;
+let wallThickness = 10;
+
+function setTool(t){
+  tool = t;
+}
+
+/* ================= INFINITE GRID ================= */
+function drawGrid(){
+
+  const gridSize = 50 * scale;
+
+  ctx.strokeStyle = "#222";
+  ctx.lineWidth = 1;
+
+  for(let x = offsetX % gridSize; x < canvas.width; x += gridSize){
+    ctx.beginPath();
+    ctx.moveTo(x,0);
+    ctx.lineTo(x,canvas.height);
+    ctx.stroke();
+  }
+
+  for(let y = offsetY % gridSize; y < canvas.height; y += gridSize){
+    ctx.beginPath();
+    ctx.moveTo(0,y);
+    ctx.lineTo(canvas.width,y);
+    ctx.stroke();
+  }
+
+}
+
+/* ================= DRAW LOOP ================= */
+function redraw(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  drawGrid();
+
+  shapes.forEach(shape=>{
+    ctx.strokeStyle = shape.color;
+    ctx.fillStyle = shape.color;
+
+    if(shape.type=="line"){
+      ctx.beginPath();
+      ctx.moveTo(shape.x1,shape.y1);
+      ctx.lineTo(shape.x2,shape.y2);
+      ctx.stroke();
+    }
+
+    if(shape.type=="rect"){
+      ctx.strokeRect(shape.x,shape.y,shape.w,shape.h);
+    }
+
+    if(shape.type=="circle"){
+      ctx.beginPath();
+      ctx.arc(shape.x,shape.y,shape.r,0,Math.PI*2);
+      ctx.stroke();
+    }
+
+    if(shape.type=="wall"){
+      ctx.lineWidth = wallThickness;
+      ctx.beginPath();
+      ctx.moveTo(shape.x1,shape.y1);
+      ctx.lineTo(shape.x2,shape.y2);
+      ctx.stroke();
+      ctx.lineWidth = 1;
+    }
+
+  });
+}
+
+canvas.addEventListener("mousedown",e=>{
+  startX = e.offsetX;
+  startY = e.offsetY;
+  drawing = true;
+});
+
+canvas.addEventListener("mouseup",e=>{
+  if(!drawing) return;
+  let endX = e.offsetX;
+  let endY = e.offsetY;
+
+  let color = document.getElementById("colorPicker").value;
+
+  if(tool=="line"){
+    shapes.push({type:"line",x1:startX,y1:startY,x2:endX,y2:endY,color});
+  }
+
+  if(tool=="rect"){
+    shapes.push({type:"rect",x:startX,y:startY,w:endX-startX,h:endY-startY,color});
+  }
+
+  if(tool=="circle"){
+    let r = Math.sqrt((endX-startX)**2+(endY-startY)**2);
+    shapes.push({type:"circle",x:startX,y:startY,r,color});
+  }
+
+  if(tool=="wall"){
+    shapes.push({type:"wall",x1:startX,y1:startY,x2:endX,y2:endY,color});
+  }
+
+  if(tool=="trim"){
+    trimBetween(startX,endX);
+  }
+
+  redraw();
+  drawing = false;
+});
+
+/* ================= TRIM TOOL ================= */
+function trimBetween(p1,p2){
+
+  shapes = shapes.filter(shape=>{
+    if(shape.type=="line"){
+      if(shape.x1 > Math.min(p1,p2) && shape.x2 < Math.max(p1,p2)){
+        return false;
+      }
+    }
+    return true;
+  });
+
+}
+
+/* ================= SAVE / NEW ================= */
+function saveFile(){
+  localStorage.setItem("prdesign",JSON.stringify(shapes));
+  alert("Saved!");
+}
+
+function newFile(){
+  shapes = [];
+  redraw();
+}
+
+/* ================= ZOOM ================= */
+canvas.addEventListener("wheel",e=>{
+  e.preventDefault();
+  scale += e.deltaY * -0.001;
+  scale = Math.min(Math.max(.5, scale), 3);
+  redraw();
+});
+
+/* ================= AXIS ================= */
+canvas.addEventListener("mousemove",e=>{
+  document.getElementById("axisIndicator").innerText =
+    "X:"+e.offsetX+" Y:"+e.offsetY;
+});
+
+redraw();
+
+</script>
+</body>
+</html>
