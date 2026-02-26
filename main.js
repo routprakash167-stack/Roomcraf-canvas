@@ -1,49 +1,13 @@
-const canvas = document.getElementById("cadCanvas");
-const ctx = canvas.getContext("2d");
+const tabs = document.querySelectorAll(".tab");
+const panels = document.querySelectorAll(".ribbon-panel");
 
-canvas.width = canvas.parentElement.clientWidth;
-canvas.height = canvas.parentElement.clientHeight;
+tabs.forEach(tab => {
+    tab.addEventListener("click", () => {
 
-let scale = 1;
-let originX = 0;
-let originY = 0;
+        tabs.forEach(t => t.classList.remove("active"));
+        panels.forEach(p => p.classList.remove("active"));
 
-function draw() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    ctx.save();
-    ctx.translate(originX, originY);
-    ctx.scale(scale, scale);
-
-    drawGrid();
-
-    ctx.restore();
-}
-
-function drawGrid() {
-    const gridSize = 50;
-
-    const startX = -originX / scale;
-    const startY = -originY / scale;
-
-    const endX = startX + canvas.width / scale;
-    const endY = startY + canvas.height / scale;
-
-    ctx.beginPath();
-
-    for (let x = Math.floor(startX / gridSize) * gridSize; x < endX; x += gridSize) {
-        ctx.moveTo(x, startY);
-        ctx.lineTo(x, endY);
-    }
-
-    for (let y = Math.floor(startY / gridSize) * gridSize; y < endY; y += gridSize) {
-        ctx.moveTo(startX, y);
-        ctx.lineTo(endX, y);
-    }
-
-    ctx.strokeStyle = "#ddd";
-    ctx.lineWidth = 1 / scale;
-    ctx.stroke();
-}
-
-draw();
+        tab.classList.add("active");
+        document.getElementById(tab.dataset.tab).classList.add("active");
+    });
+});
