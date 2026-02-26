@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Prakash CAD</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- RIBBON -->
+    <div class="ribbon">
+        <div class="ribbon-section">
+            <button>New</button>
+            <button>Open</button>
+            <button>Save</button>
+        </div>
+
+        <div class="ribbon-section">
+            <button>Line</button>
+            <button>Circle</button>
+            <button>Trim</button>
+            <button>Move</button>
+        </div>
+
+        <div class="ribbon-section">
+            <button>Undo</button>
+            <button>Redo</button>
+        </div>
+    </div>
+
+    <!-- MAIN AREA -->
+    <div class="main-container">
+
+        <!-- LEFT TOOL PANEL -->
+        <div class="sidebar">
+            <h3>Tools</h3>
+            <button>Line</button>
+            <button>Circle</button>
+            <button>Trim</button>
+        </div>
+
+        <!-- DESKTOP / CANVAS AREA -->
+        <div class="desktop">
+            <canvas id="cadCanvas"></canvas>
+        </div>
+
+    </div>
+
+    <!-- STATUS BAR -->
+    <div class="status-bar">
+        <span id="coords">X: 0 Y: 0</span>
+        <span id="zoomLevel">Zoom: 100%</span>
+    </div>
+
+    <script type="module" src="main.js"></script>
+</body>
+</html>
